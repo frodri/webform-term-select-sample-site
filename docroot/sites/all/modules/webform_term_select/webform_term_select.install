@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * Implements hook_install().
+ * Inserts our new fields into the taxonomy term schema.
+ */
+function webform_term_select_install() {
+    webform_term_select_install_create_fields('taxonomy_term_data', array('wts_visible'));
+}
+
+/**
+ * Implements hook_uninstall().
+ * Drops the fields we declared on the install hook.
+ */
+function webform_term_select_uninstall() {
+    db_drop_field('taxonomy_term_data', 'wts_visible');
+}
+
+/**
+ * Implements hook_schema().
+ * Inserts our new fields into the taxonomy term schema.
+ */
+function webform_term_select_schema_alter(&$schema) {
+    $schema['taxonomy_term_data']['fields']['wts_visible'] = array(
+        'type' => 'int',
+        'description' => 'Boolean indicating if Webforms is able to see this term.', 
+        'unsigned' => TRUE, 
+        'not null' => TRUE, 
+        'default' => 0
+    );
+}
+
+/**
+ * Utility method for field creation.
+ * Allows for multiple fields to be created/edited without having to refresh 
+ * the schema on every call. Based on an implementation done by the "i18n" contrib module.
+ */
+function webform_term_select_install_create_fields($table, $fields) {
+  static $schema;
+  // Do not force schema refresh more than once per request.
+  $schema = drupal_get_schema($table, !isset($schema));
+  foreach ($fields as $field) {
+    if (!empty($schema['fields'][$field])) {
+      if (!db_field_exists($table, $field)) {
+        db_add_field($table, $field, $schema['fields'][$field]);
+      }
+      else {
+        // The field exists, make sure field definition is up to date.
+        db_change_field($table, $field, $field, $schema['fields'][$field]);
+      }
+    }
+  }
+}

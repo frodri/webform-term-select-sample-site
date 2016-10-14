@@ -1,0 +1,7 @@
+name = Webform Term Select
+description = Creates pre-built option lists for taxonomies.
+core = 7.x
+package = Webform
+dependencies[] = webform
+dependencies[] = taxonomy
+version = "7.x-0.1"

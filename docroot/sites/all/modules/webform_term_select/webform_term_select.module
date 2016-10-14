@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * Implements hook_form_taxonomy_form_term_alter().
+ * Adds the form fields this module needs to flag a term as visible to our select
+ * options callback function. We also verify the absence of "confirm_delete" on 
+ * the form state to prevent our fields from displaying on the delete confirmation page. 
+ */
+function webform_term_select_form_taxonomy_form_term_alter(&$form, &$form_state, $form_id) {
+    $term = $form_state['term'];
+    dsm($form_state);
+
+    if (!isset($form_state['confirm_delete'])) {
+        $form['webform_term_select'] = array(
+            '#type' => 'fieldset',
+            '#title' => t('Webform Term Select'),
+            '#collapsible' => TRUE,
+            '#weight' => 0,
+        );
+        $form['webform_term_select']['show'] = array(
+            '#type' =>'checkbox', 
+            '#title' => t('Show this term on the Webform pre-built lists'),
+            '#default_value' => isset($term->wts_visible) ? $term->wts_visible : '0',
+        );
+        array_unshift($form['#submit'], "webform_term_select_taxonomy_form_submit");
+    }
+}
+
+/**
+ * Additional submit handler for the taxonomy_form_term form.
+ * Fills in the $term->wts_visible flag according to the value in our "show" form field 
+ * whenever a term is created or updated.
+ */
+function webform_term_select_taxonomy_form_submit($form, &$form_state) {
+    if ($form_state['triggering_element']['#value'] != t('Delete')) {
+        $form_state['term']->wts_visible = $form_state['values']['show'];
+    }
+}
+
+/**
+ * Implements hook_form_taxonomy_overview_terms_alter().
+ * Edits the term links in admin/structure/taxonomy/<vocabulary_machine_name> 
+ * to display whether or not a term has been flagged into Webforms
+ */
+function webform_term_select_form_taxonomy_overview_terms_alter(&$form, &$form_state, $form_id) {
+    $query = 'tid:';
+    foreach ($form as $key => $value) { 
+        if(substr($key, 0, strlen($query)) === $query) {
+            if($value['#term']['wts_visible'] === '1') {
+                $form[$key]['view'] = array(
+                    '#markup' => l(
+                        $form[$key]['view']['#title'], 
+                        $form[$key]['view']['#href']) . ' <small>'. t('Shown in Webforms').'</small>',
+                );
+            }
+        }
+    }
+}
+
+
+/**
+ * Implements hook_webform_select_options_info().
+ * Fetches each vocabulary and adds a pre-built option list entry for each one.
+ */
+function webform_term_select_webform_select_options_info() {
+  $items = array();
+
+  $vocabularies = taxonomy_get_vocabularies();
+
+  foreach ($vocabularies as $voc) {
+    $items['vid_' . $voc->vid] = array(
+      'title' => t('Flagged terms from') .' '. $voc->name,
+      'options callback' => 'webform_term_select_vocabulary_terms',
+      'options arguments' => array('vid' => $voc->vid),
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Pre-built option list callback to populate the select options. 
+ * This particular callback filters "wts_visible" flagged fields 
+ * into the select options array.
+ */
+function webform_term_select_vocabulary_terms($component, $flat, $arguments) {
+  $terms = array();
+  $tree = taxonomy_get_tree($arguments['vid']);
+
+  foreach ($tree as $term) {
+      if($term->wts_visible === "1") {
+          $terms['tid_' . $term->tid] = $term->name;
+      }
+  }
+
+  return $terms;
+}
