@@ -9,7 +9,7 @@ A Drupal 7 module that creates pre-built option lists for flagged taxonomy terms
 
 ## Installation Instructions
 
-* Download the latest release from the Releases section.
+* Download the latest release from the [Releases](https://github.com/frodri/webform-term-select/releases) section.
 * Unzip its contents on the *sites/all/modules* (or *sites/\<your site\>/modules*) directory.
 * Activate the module in the Modules admin page.
 
