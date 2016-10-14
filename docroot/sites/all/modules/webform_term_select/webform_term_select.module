@@ -8,7 +8,6 @@
  */
 function webform_term_select_form_taxonomy_form_term_alter(&$form, &$form_state, $form_id) {
     $term = $form_state['term'];
-    dsm($form_state);
 
     if (!isset($form_state['confirm_delete'])) {
         $form['webform_term_select'] = array(
